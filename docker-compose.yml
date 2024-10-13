@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  # PostgreSQL
+  odoo-postgresql:
+    image: postgres:17
+    container_name: odoo-postgresql
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: odoo
+    volumes:
+      - odoo-postgresql-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+  # Odoo
+  odoo:
+    build: .
+    container_name: odoo
+    depends_on:
+      - odoo-postgresql
+    environment:
+      - HOST=odoo-postgresql
+      - USER=odoo
+      - PASSWORD=odoo
+      - DB_NAME=odoo
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./extra-addons:/mnt/extra-addons
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+  # pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    networks:
+      - odoo-network
+    restart: unless-stopped
+
+volumes:
+  odoo-postgresql-data:
+  odoo-data:
+
+networks:
+  odoo-network:
+    driver: bridge
