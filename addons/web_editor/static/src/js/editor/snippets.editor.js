@@ -747,15 +747,18 @@ var SnippetEditor = publicWidget.Widget.extend({
         this.selectorLockWithin = new Set();
         const selectorExcludeAncestor = new Set();
 
-        var $element = this.$target.parent();
-        while ($element.length) {
-            var parentEditor = $element.data('snippet-editor');
-            if (parentEditor) {
-                this._customize$Elements = this._customize$Elements
-                    .concat(parentEditor._customize$Elements);
-                break;
+        if (this.options.allowParentsEditors) {
+            // TODO Should not rely on .data('snippet-editor') but ask parents
+            var $element = this.$target.parent();
+            while ($element.length) {
+                var parentEditor = $element.data('snippet-editor');
+                if (parentEditor) {
+                    this._customize$Elements = this._customize$Elements
+                        .concat(parentEditor._customize$Elements);
+                    break;
+                }
+                $element = $element.parent();
             }
-            $element = $element.parent();
         }
 
         var $optionsSection = $(renderToElement('web_editor.customize_block_options_section', {
@@ -2208,7 +2211,7 @@ class SnippetsMenu extends Component {
             // Note: we cannot listen to keyup in .o_default_snippet_text
             // elements via delegation because keyup only bubbles from focusable
             // elements which contenteditable are not.
-            const selection = this.ownerDocument.getSelection();
+            const selection = this.$body[0].ownerDocument.getSelection();
             if (!selection.rangeCount) {
                 return;
             }
@@ -3376,7 +3379,8 @@ class SnippetsMenu extends Component {
         }
 
         var def;
-        if (this._allowParentsEditors($snippet)) {
+        const allowParentsEditors = this._allowParentsEditors($snippet);
+        if (allowParentsEditors) {
             var $parent = globalSelector.closest($snippet.parent());
             if ($parent.length) {
                 def = this._createSnippetEditor($parent);
@@ -3394,7 +3398,13 @@ class SnippetsMenu extends Component {
             }
 
             let editableArea = self.getEditableArea();
-            snippetEditor = new SnippetEditor(parentEditor || self, $snippet, self.templateOptions, $snippet.closest('[data-oe-type="html"], .oe_structure').add(editableArea), self.options);
+            snippetEditor = new SnippetEditor(
+                parentEditor || self,
+                $snippet,
+                self.templateOptions,
+                $snippet.closest('[data-oe-type="html"], .oe_structure').add(editableArea),
+                Object.assign({}, self.options, {allowParentsEditors: allowParentsEditors})
+            );
             self.snippetEditors.push(snippetEditor);
             // Keep parent below its child inside the DOM as its `o_handle`
             // needs to be (visually) on top of the child ones.
