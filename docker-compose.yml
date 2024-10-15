@@ -7,8 +7,9 @@ services:
       POSTGRES_USER: odoo
       POSTGRES_PASSWORD: odoo
       POSTGRES_DB: odoo_food_supply_chain
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - ./postgresql-data:/var/lib/postgresql/data  # Sử dụng thư mục trên host
+      - odoo-postgresql-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -24,7 +25,8 @@ services:
     ports:
       - "8069:8069"
     volumes:
-      - ./odoo-data:/var/lib/odoo
+      - odoo-data:/var/lib/odoo
+      - odoo-config:/etc/odoo
       - ./odoo.conf:/etc/odoo/odoo.conf
     networks:
       - odoo-network
@@ -41,10 +43,16 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - ./pgadmin-data:/var/lib/pgadmin
+      - pgadmin-data:/var/lib/pgadmin 
     networks:
       - odoo-network
     restart: unless-stopped
+
+volumes:
+  odoo-postgresql-data:
+  odoo-data:
+  odoo-config:
+  pgadmin-data:
 
 networks:
   odoo-network:
